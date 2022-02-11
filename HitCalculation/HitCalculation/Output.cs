@@ -13,7 +13,7 @@ namespace HitCalculation
 
                 foreach (string line in debugText)
                 {
-                    sw.WriteLineAsync(line);
+                    sw.WriteLine(line);
                 }
         }
     }

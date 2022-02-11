@@ -10,22 +10,27 @@ namespace HitCalculation
 
         private int hits;
         private int misses;
+        private int dodges;
         private List<string> debugText = new List<string>();
 
 
         static void Main(string[] args)
         {
             Program program = new Program();
-            program.Monte(program.hits, program.misses, program.debugText, true);
+            program.Monte(program.hits, program.misses, program.dodges, program.debugText, true);
         }
 
-        public void Monte(int hits, int misses, List<string> debugText, bool write)
+        public void Monte(int hits, int misses, int dodges, List<string> debugText, bool write)
         {
-            for(int i=0; i<13; i++)
+            for(int i=0; i<10000; i++)
             {
                 //MLS Max accuracy == 112
                 //Melee defense cap == 125
-                if (TestHit(112, 125, true, true, true, hits, misses, debugText, false))
+                //Secondary defense - input 0 to simulate intimidate on the defender
+                //using citros?
+                //blind?
+                //using pikatta?
+                if (TestHit(112, 125, 125, true, true, true, hits, misses, debugText))
                     hits++;
                 else
                     misses++;
@@ -40,7 +45,7 @@ namespace HitCalculation
         }
 
 
-        public static bool TestHit(int attackerAccuracy, int targetDefense, bool citros, bool blind, bool pikatta, int hits, int misses, List<string> debugText, bool write)
+        public static bool TestHit(int attackerAccuracy, int targetDefense, int defenderDodge, bool citros, bool blind, bool pikatta, int hits, int misses, List<string> debugText)
         {
             string outputText = "";
 
@@ -70,10 +75,25 @@ namespace HitCalculation
             //HIT
             else
             {
-                outputText = "HIT with " + Math.Round(accTotal, 2) + " accuraattackerAccuracycy" + " vs targetDefense " + targetDefense;
-                Console.WriteLine(outputText);
-                debugText.Add(outputText);
-                return true;
+                bool dodge = GetDefenderSecondaryDefenseModifier(attackerAccuracy, attackerRoll, defenderDodge);
+
+                // roll secondary
+                if (dodge)
+                {
+                    outputText = "DODGE with " + Math.Round(accTotal, 2) + " attackerAccuracy" + " vs dodge " + defenderDodge;
+                    Console.WriteLine(outputText);
+                    debugText.Add(outputText);
+                    return false;
+                }
+
+                else
+                {
+                    outputText = "HIT with " + Math.Round(accTotal, 2) + " attackerAccuracy" + " vs targetDefense " + targetDefense;
+                    Console.WriteLine(outputText);
+                    debugText.Add(outputText);
+                    return true;
+                }
+                    
             }
         }
 
@@ -105,6 +125,23 @@ namespace HitCalculation
             accTotal += attackerAccuracy - targetDefense;
 
             return accTotal;
+        }
+
+        public static bool GetDefenderSecondaryDefenseModifier(double attackerAccuracy, double attackerRoll, double defenderDodge)
+        {
+            if (defenderDodge <= 0)
+                return true; // no secondary defenses
+            else
+            {
+                // add in a random roll
+                double defenderRoll = RAND.NextDouble() * 199.0 + 1.0;
+                defenderDodge += defenderRoll;
+                //cob mod 115 at MFencer
+                defenderDodge += 115;
+
+                return defenderDodge > 50 + attackerAccuracy + attackerRoll;
+            }
+
         }
 
         private double TotalAccuracy(int hits, int misses)
